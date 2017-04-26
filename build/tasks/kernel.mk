@@ -1,4 +1,5 @@
 # Copyright (C) 2012 The CyanogenMod Project
+#           (C) 2017 The LineageOS Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -160,7 +161,7 @@ ifeq "$(wildcard $(KERNEL_SRC) )" ""
         $(warning * THIS IS DEPRECATED, AND WILL BE DISCONTINUED                *)
         $(warning * Please configure your device to download the kernel         *)
         $(warning * source repository to $(KERNEL_SRC))
-        $(warning * See http://wiki.cyanogenmod.org/w/Doc:_integrated_kernel_building)
+        $(warning * See http://wiki.lineageos.org/w/Doc:_integrated_kernel_building)
         $(warning * for more information                                        *)
         $(warning ***************************************************************)
         FULL_KERNEL_BUILD := false
@@ -239,36 +240,7 @@ ifneq ($(USE_CCACHE),)
     endif
 endif
 
-ifeq ($(TARGET_ARCH),arm)
-    ifneq ($(USE_CCACHE),)
-      ccache := $(ANDROID_BUILD_TOP)/prebuilts/misc/$(HOST_PREBUILT_TAG)/ccache/ccache
-      # Check that the executable is here.
-      ccache := $(strip $(wildcard $(ccache)))
-    endif
-    ifneq ($(TARGET_GCC_VERSION_ARM),)
-      ifeq ($(HOST_OS),darwin)
-        ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilts/gcc/darwin-x86/arm/arm-eabi-$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/arm-eabi-"
-      else
-        ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/arm-eabi-$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/arm-eabi-"
-      endif
-    else
-      ARM_CROSS_COMPILE:=CROSS_COMPILE="$(ccache) $(ARM_EABI_TOOLCHAIN)/arm-eabi-"
-    endif
-    ccache = 
-endif
-
-ifeq ($(TARGET_ARCH),arm64)
-    ifneq ($(USE_CCACHE),)
-      ccache := $(ANDROID_BUILD_TOP)/prebuilts/misc/$(HOST_PREBUILT_TAG)/ccache/ccache
-      # Check that the executable is here.
-      ccache := $(strip $(wildcard $(ccache)))
-    endif
-ifneq ($(TARGET_KERNEL_CUSTOM_TOOLCHAIN),)
-    KERNEL_CROSS_COMPILE := CROSS_COMPILE="$(ccache) $(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/aarch64/$(TARGET_KERNEL_CUSTOM_TOOLCHAIN)/bin/$(KERNEL_TOOLCHAIN_PREFIX)"
-else
-    KERNEL_CROSS_COMPILE := CROSS_COMPILE="$(ccache) $(KERNEL_TOOLCHAIN_PATH)"
-   endif
-  endif
+KERNEL_CROSS_COMPILE := CROSS_COMPILE="$(ccache) $(KERNEL_TOOLCHAIN_PATH)"
 ccache =
 
 define mv-modules
@@ -289,8 +261,7 @@ define clean-module-folder
 endef
 
 ifeq ($(HOST_OS),darwin)
-  MAKE_FLAGS += C_INCLUDE_PATH=$(ANDROID_BUILD_TOP)/external/elfutils/libelf:/usr/local/opt/openssl/include
-  MAKE_FLAGS += LIBRARY_PATH=/usr/local/opt/openssl/lib
+  MAKE_FLAGS += C_INCLUDE_PATH=$(ANDROID_BUILD_TOP)/external/elfutils/libelf/
 endif
 
 ifeq ($(TARGET_KERNEL_MODULES),)
@@ -310,7 +281,7 @@ $(KERNEL_ADDITIONAL_CONFIG_OUT): force_additional_config
 	$(hide) cmp -s $(KERNEL_ADDITIONAL_CONFIG_SRC) $@ || cp $(KERNEL_ADDITIONAL_CONFIG_SRC) $@;
 
 $(KERNEL_CONFIG): $(KERNEL_OUT_STAMP) $(KERNEL_DEFCONFIG_SRC) $(KERNEL_ADDITIONAL_CONFIG_OUT)
-	@echo "Building Kernel Config"
+	@echo -e ${CL_GRN}"Building Kernel Config"${CL_RST}
 	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) VARIANT_DEFCONFIG=$(VARIANT_DEFCONFIG) SELINUX_DEFCONFIG=$(SELINUX_DEFCONFIG) $(KERNEL_DEFCONFIG)
 	$(hide) if [ ! -z "$(KERNEL_CONFIG_OVERRIDE)" ]; then \
 			echo "Overriding kernel config with '$(KERNEL_CONFIG_OVERRIDE)'"; \
@@ -324,18 +295,18 @@ $(KERNEL_CONFIG): $(KERNEL_OUT_STAMP) $(KERNEL_DEFCONFIG_SRC) $(KERNEL_ADDITIONA
 			$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) KCONFIG_ALLCONFIG=$(KERNEL_OUT)/.config alldefconfig; fi
 
 TARGET_KERNEL_BINARIES: $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG) $(KERNEL_HEADERS_INSTALL_STAMP)
-	@echo "Building Kernel"
+	@echo -e ${CL_GRN}"Building Kernel"${CL_RST}
 	$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) $(TARGET_PREBUILT_INT_KERNEL_TYPE)
 	$(hide) if grep -q 'CONFIG_OF=y' $(KERNEL_CONFIG) ; \
 			then \
-				echo "Building DTBs" ; \
+				echo -e ${CL_GRN}"Building DTBs"${CL_RST} ; \
 				$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) dtbs ; \
 			else \
 				echo "DTBs not enabled" ; \
 			fi ;
 	$(hide) if grep -q 'CONFIG_MODULES=y' $(KERNEL_CONFIG) ; \
 			then \
-				echo "Building Kernel Modules" ; \
+				echo -e ${CL_GRN}"Building Kernel Modules"${CL_RST} ; \
 				$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules && \
 				$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) ARCH=$(KERNEL_ARCH) $(KERNEL_CROSS_COMPILE) modules_install && \
 				$(mv-modules) && \
@@ -350,7 +321,7 @@ $(TARGET_KERNEL_MODULES): TARGET_KERNEL_BINARIES
 $(TARGET_PREBUILT_INT_KERNEL): $(TARGET_KERNEL_MODULES)
 
 $(KERNEL_HEADERS_INSTALL_STAMP): $(KERNEL_OUT_STAMP) $(KERNEL_CONFIG)
-	@echo "Building Kernel Headers"
+	@echo -e ${CL_GRN}"Building Kernel Headers"${CL_RST}
 	$(hide) if [ ! -z "$(KERNEL_HEADER_DEFCONFIG)" ]; then \
 			rm -f ../$(KERNEL_CONFIG); \
 			$(MAKE) $(MAKE_FLAGS) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(KERNEL_HEADER_ARCH) $(KERNEL_CROSS_COMPILE) VARIANT_DEFCONFIG=$(VARIANT_DEFCONFIG) SELINUX_DEFCONFIG=$(SELINUX_DEFCONFIG) $(KERNEL_HEADER_DEFCONFIG); \

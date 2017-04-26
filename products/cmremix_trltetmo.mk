@@ -1,9 +1,6 @@
 # Check for target product
 ifeq (cmremix_trltetmo,$(TARGET_PRODUCT))
 
-# Kernel Toolchain
-# TARGET_KERNEL_CUSTOM_TOOLCHAIN := aarch64-7.0
-
 # Disable debug
 # DISABLE_ADB_AUTH := true
 
