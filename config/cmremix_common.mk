@@ -49,8 +49,12 @@ endif
 
 # CMRemixOTA
 PRODUCT_PACKAGES += \
-    CMRemixUpdater
+    CMRemixUpdater \
+    MagiskManager
 
+# Magisk
+ PRODUCT_COPY_FILES += \
+    vendor/cmremix/prebuilt/common/magisk.zip:system/addon.d/magisk.zip
 
 # KCAL - Advanced color control for Qualcomm MDSS 8x26/8974/8084
 PRODUCT_COPY_FILES += \
