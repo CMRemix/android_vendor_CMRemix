@@ -63,7 +63,13 @@ function breakfast()
             if [ -z "$variant" ]; then
                 variant="userdebug"
             fi
+
+            if ! check_product cmremix_$target && check_product cmremix_$target; then
+                echo "** Warning: '$target' is using CMREMIX-based makefiles. This will be deprecated in the next major release."
+                lunch cmremix_$target-$variant
+            else
             lunch cmremix_$target-$variant
+            fi
         fi
     fi
     return $?
@@ -90,29 +96,28 @@ function eat()
             done
             echo "Device Found.."
         fi
-    if (adb shell getprop ro.cmremix.device | grep -q "$CMREMIX_BUILD");
-    then
-        # if adbd isn't root we can't write to /cache/recovery/
-        adb root
-        sleep 1
-        adb wait-for-device
-        cat << EOF > /tmp/command
+        if (adb shell getprop ro.cmremix.device | grep -q "$CMREMIX_BUILD"); then
+            # if adbd isn't root we can't write to /cache/recovery/
+            adb root
+            sleep 1
+            adb wait-for-device
+            cat << EOF > /tmp/command
 --sideload_auto_reboot
 EOF
-        if adb push /tmp/command /cache/recovery/ ; then
-            echo "Rebooting into recovery for sideload installation"
-            adb reboot recovery
-            adb wait-for-sideload
-            adb sideload $ZIPPATH
+            if adb push /tmp/command /cache/recovery/ ; then
+                echo "Rebooting into recovery for sideload installation"
+                adb reboot recovery
+                adb wait-for-sideload
+                adb sideload $ZIPPATH
+            fi
+            rm /tmp/command
+        else
+            echo "The connected device does not appear to be $CMREMIX_BUILD, run away!"
         fi
-        rm /tmp/command
+        return $?
     else
         echo "Nothing to eat"
         return 1
-    fi
-    return $?
-    else
-        echo "The connected device does not appear to be $CMREMIX_BUILD, run away!"
     fi
 }
 
@@ -280,7 +285,7 @@ function cafremote()
     then
         PFX="platform/"
     fi
-    git remote add caf git://codeaurora.org/$PFX$PROJECT
+    git remote add caf https://source.codeaurora.org/quic/la/$PFX$PROJECT
     echo "Remote 'caf' created"
 }
 
@@ -678,7 +683,7 @@ function mka() {
                 make -C $T -j `sysctl hw.ncpu|cut -d" " -f2` "$@"
                 ;;
             *)
-                mk_timer schedtool -B -n 10 -e ionice -n 7 make -C $T -j$(cat /proc/cpuinfo | grep "^processor" | wc -l) "$@"
+                mk_timer schedtool -B -n 10 -e ionice -n 7 make -C $T -j$(grep "^processor" /proc/cpuinfo | wc -l) "$@"
                 ;;
         esac
 
@@ -722,7 +727,7 @@ function mms() {
                 make -C $T -j $NUM_CPUS "$@"
             ;;
         *)
-            local NUM_CPUS=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
+            local NUM_CPUS=$(grep "^processor" /proc/cpuinfo | wc -l)
             ONE_SHOT_MAKEFILE="__none__" \
                 mk_timer schedtool -B -n 1 -e ionice -n 1 \
                 make -C $T -j $NUM_CPUS "$@"
@@ -811,8 +816,10 @@ function dopush()
         rm -f $OUT/.log;return $ret
     fi
 
+    is_gnu_sed=`sed --version | head -1 | grep -c GNU`
+
     # Install: <file>
-    if [ `uname` = "Linux" ]; then
+    if [ $is_gnu_sed -gt 0 ]; then
         LOC="$(cat $OUT/.log | sed -r -e 's/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g' -e 's/^\[ {0,2}[0-9]{1,3}% [0-9]{1,6}\/[0-9]{1,6}\] +//' \
             | grep '^Install: ' | cut -d ':' -f 2)"
     else
@@ -821,7 +828,7 @@ function dopush()
     fi
 
     # Copy: <file>
-    if [ `uname` = "Linux" ]; then
+    if [ $is_gnu_sed -gt 0 ]; then
         LOC="$LOC $(cat $OUT/.log | sed -r -e 's/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g' -e 's/^\[ {0,2}[0-9]{1,3}% [0-9]{1,6}\/[0-9]{1,6}\] +//' \
             | grep '^Copy: ' | cut -d ':' -f 2)"
     else

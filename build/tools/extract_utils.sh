@@ -438,12 +438,35 @@ function write_product_packages() {
 # be executed first!
 #
 function write_header() {
+    if [ -f $1 ]; then
+        rm $1
+    fi
+
     YEAR=$(date +"%Y")
 
     [ "$COMMON" -eq 1 ] && local DEVICE="$DEVICE_COMMON"
 
-    cat << EOF > $1
-# Copyright (C) $YEAR The CyanogenMod Project
+    NUM_REGEX='^[0-9]+$'
+    if [[ $INITIAL_COPYRIGHT_YEAR =~ $NUM_REGEX ]] && [ $INITIAL_COPYRIGHT_YEAR -le $YEAR ]; then
+        if [ $INITIAL_COPYRIGHT_YEAR -lt 2016 ]; then
+            printf "# Copyright (C) $INITIAL_COPYRIGHT_YEAR-2016 The CyanogenMod Project\n" > $1
+        elif [ $INITIAL_COPYRIGHT_YEAR -eq 2016 ]; then
+            printf "# Copyright (C) 2016 The CyanogenMod Project\n" > $1
+        fi
+        if [ $YEAR -eq 2017 ]; then
+            printf "# Copyright (C) 2017 The LineageOS Project\n" >> $1
+        elif [ $INITIAL_COPYRIGHT_YEAR -eq $YEAR ]; then
+            printf "# Copyright (C) $YEAR The LineageOS Project\n" >> $1
+        elif [ $INITIAL_COPYRIGHT_YEAR -le 2017 ]; then
+            printf "# Copyright (C) 2017-$YEAR The LineageOS Project\n" >> $1
+        else
+            printf "# Copyright (C) $INITIAL_COPYRIGHT_YEAR-$YEAR The LineageOS Project\n" >> $1
+        fi
+    else
+        printf "# Copyright (C) $YEAR The LineageOS Project\n" > $1
+    fi
+
+    cat << EOF >> $1
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -572,7 +595,7 @@ function parse_file_list() {
             PRODUCT_COPY_FILES_HASHES+=("$HASH")
         fi
 
-    done < <(egrep -v '(^#|^[[:space:]]*$)' "$1" | sort | uniq)
+    done < <(egrep -v '(^#|^[[:space:]]*$)' "$1" | LC_ALL=C sort | uniq)
 }
 
 #
@@ -690,8 +713,12 @@ function oat2dex() {
         if get_file "$OAT" "$TMPDIR" "$SRC"; then
             java -jar "$BAKSMALIJAR" deodex -o "$TMPDIR/dexout" -b "$BOOTOAT" -d "$TMPDIR" "$TMPDIR/$(basename "$OAT")"
         elif [[ "$CM_TARGET" =~ .jar$ ]]; then
-            # try to extract classes.dex from boot.oat for framework jars
-            java -jar "$BAKSMALIJAR" deodex -o "$TMPDIR/dexout" -b "$BOOTOAT" -d "$TMPDIR" -e "/$OEM_TARGET" "$BOOTOAT"
+            # try to extract classes.dex from boot.oats for framework jars
+            JAROAT="$TMPDIR/system/framework/$ARCH/boot-$(basename ${OEM_TARGET%.*}).oat"
+            if [ ! -f "$JAROAT" ]; then
+                JAROAT=$BOOTOAT;
+            fi
+            java -jar "$BAKSMALIJAR" deodex -o "$TMPDIR/dexout" -b "$BOOTOAT" -d "$TMPDIR" "$JAROAT/$OEM_TARGET"
         else
             continue
         fi
@@ -751,7 +778,7 @@ function fix_xml() {
 # extract:
 #
 # $1: file containing the list of items to extract
-# $2: path to extracted system folder, or "adb" to extract from device
+# $2: path to extracted system folder, an ota zip file, or "adb" to extract from device
 #
 function extract() {
     if [ -z "$OUTDIR" ]; then
@@ -775,11 +802,48 @@ function extract() {
         init_adb_connection
     fi
 
+    if [ -f "$SRC" ] && [ "${SRC##*.}" == "zip" ]; then
+        DUMPDIR="$CM_ROOT"/system_dump
+
+        # Check if we're working with the same zip that was passed last time.
+        # If so, let's just use what's already extracted.
+        MD5=`md5sum "$SRC"| awk '{print $1}'`
+        OLDMD5=`cat "$DUMPDIR"/zipmd5.txt`
+
+        if [ "$MD5" != "$OLDMD5" ]; then
+            rm -rf "$DUMPDIR"
+            mkdir "$DUMPDIR"
+            unzip "$SRC" -d "$DUMPDIR"
+            echo "$MD5" > "$DUMPDIR"/zipmd5.txt
+
+            # Stop if an A/B OTA zip is detected. We cannot extract these.
+            if [ -a "$DUMPDIR"/payload.bin ]; then
+                echo "A/B style OTA zip detected. This is not supported at this time. Stopping..."
+                exit 1
+            # If OTA is block based, extract it.
+            elif [ -a "$DUMPDIR"/system.new.dat ]; then
+                echo "Converting system.new.dat to system.img"
+                python "$CM_ROOT"/vendor/cm/build/tools/sdat2img.py "$DUMPDIR"/system.transfer.list "$DUMPDIR"/system.new.dat "$DUMPDIR"/system.img 2>&1
+                rm -rf "$DUMPDIR"/system.new.dat "$DUMPDIR"/system
+                mkdir "$DUMPDIR"/system "$DUMPDIR"/tmp
+                echo "Requesting sudo access to mount the system.img"
+                sudo mount -o loop "$DUMPDIR"/system.img "$DUMPDIR"/tmp
+                cp -r "$DUMPDIR"/tmp/* "$DUMPDIR"/system/
+                sudo umount "$DUMPDIR"/tmp
+                rm -rf "$DUMPDIR"/tmp "$DUMPDIR"/system.img
+            fi
+        fi
+
+        SRC="$DUMPDIR"
+    fi
+
     if [ "$VENDOR_STATE" -eq "0" ]; then
         echo "Cleaning output directory ($OUTPUT_ROOT).."
         rm -rf "${OUTPUT_TMP:?}"
         mkdir -p "${OUTPUT_TMP:?}"
-        mv "${OUTPUT_ROOT:?}/"* "${OUTPUT_TMP:?}/"
+        if [ -d "$OUTPUT_ROOT" ]; then
+            mv "${OUTPUT_ROOT:?}/"* "${OUTPUT_TMP:?}/"
+        fi
         VENDOR_STATE=1
     fi
 
@@ -824,12 +888,12 @@ function extract() {
                 adb pull "/$FILE" "$DEST"
             fi
         else
-            # Try OEM target first
-            if [ -f "$SRC/$FILE" ]; then
-                cp "$SRC/$FILE" "$DEST"
-            # if file does not exist try CM target
-            elif [ -f "$SRC/$TARGET" ]; then
+            # Try CM target first
+            if [ -f "$SRC/$TARGET" ]; then
                 cp "$SRC/$TARGET" "$DEST"
+            # if file does not exist try OEM target
+            elif [ -f "$SRC/$FILE" ]; then
+                cp "$SRC/$FILE" "$DEST"
             else
                 printf '    !! file not found in source\n'
             fi

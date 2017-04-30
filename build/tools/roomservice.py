@@ -202,29 +202,34 @@ def add_to_manifest(repositories, fallback_branch = None):
 
 def fetch_dependencies(repo_path, fallback_branch = None):
     print('Looking for dependencies in %s' % repo_path)
-    dependencies_path = repo_path + '/cm.dependencies'
+    dependencies_paths = [repo_path + '/lineage.dependencies', repo_path + '/cm.dependencies']
+    found_dependencies = False
     syncable_repos = []
     verify_repos = []
 
-    if os.path.exists(dependencies_path):
-        dependencies_file = open(dependencies_path, 'r')
-        dependencies = json.loads(dependencies_file.read())
-        fetch_list = []
+    for dependencies_path in dependencies_paths:
+        if os.path.exists(dependencies_path):
+            dependencies_file = open(dependencies_path, 'r')
+            dependencies = json.loads(dependencies_file.read())
+            fetch_list = []
 
-        for dependency in dependencies:
-            if not is_in_manifest(dependency['target_path']):
-                fetch_list.append(dependency)
-                syncable_repos.append(dependency['target_path'])
-                verify_repos.append(dependency['target_path'])
-            elif re.search("android_device_.*_.*$", dependency['repository']):
-                verify_repos.append(dependency['target_path'])
+            for dependency in dependencies:
+                if not is_in_manifest(dependency['target_path']):
+                    fetch_list.append(dependency)
+                    syncable_repos.append(dependency['target_path'])
+                    verify_repos.append(dependency['target_path'])
+                elif re.search("android_device_.*_.*$", dependency['repository']):
+                    verify_repos.append(dependency['target_path'])
 
-        dependencies_file.close()
+            dependencies_file.close()
+            found_dependencies = True
 
-        if len(fetch_list) > 0:
-            print('Adding dependencies to manifest')
-            add_to_manifest(fetch_list, fallback_branch)
-    else:
+            if len(fetch_list) > 0:
+                print('Adding dependencies to manifest')
+                add_to_manifest(fetch_list, fallback_branch)
+            break
+
+    if not found_dependencies:
         print('Dependencies file not found, bailing out.')
 
     if len(syncable_repos) > 0:
@@ -249,7 +254,7 @@ if depsonly:
 else:
     for repository in repositories:
         repo_name = repository['name']
-        if repo_name.startswith("android_device_") and repo_name.endswith("_" + device):
+        if re.match(r"^android_device_[^_]*_" + device + "$", repo_name):
             print("Found repository: %s" % repository['name'])
             
             manufacturer = repo_name.replace("android_device_", "").replace("_" + device, "")
