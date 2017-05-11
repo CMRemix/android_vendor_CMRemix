@@ -52,9 +52,6 @@ PRODUCT_PACKAGES += \
     CMRemixUpdater \
     MagiskManager
 
-# Bootanimation
-PRODUCT_COPY_FILES += vendor/cmremix/prebuilt/common/bootanimation/1600.zip:system/media/bootanimation.zip
-
 # Magisk
  PRODUCT_COPY_FILES += \
     vendor/cmremix/prebuilt/common/magisk.zip:system/addon.d/magisk.zip
