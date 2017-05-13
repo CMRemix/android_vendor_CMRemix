@@ -47,6 +47,9 @@ ifeq ($(CMREMIX_USE_ADDREMOVE),true)
     GET_PROJECT_ADDS := $(shell vendor/cm/tools/addprojects.py $(PRODUCT_NAME))
 endif
 
+# Bootanimation
+PRODUCT_COPY_FILES += vendor/cmremix/prebuilt/common/bootanimation/bootanimation.zip:system/media/bootanimation.zip
+
 # CMRemixOTA
 PRODUCT_PACKAGES += \
     CMRemixUpdater \
