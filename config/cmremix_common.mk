@@ -50,6 +50,9 @@ endif
 # Bootanimation
 PRODUCT_COPY_FILES += vendor/cmremix/prebuilt/common/bootanimation/bootanimation.zip:system/media/bootanimation.zip
 
+# Squisher Location
+SQUISHER_SCRIPT := vendor/cmremix/tools/squisher
+
 # CMRemixOTA
 PRODUCT_PACKAGES += \
     CMRemixUpdater \

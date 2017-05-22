@@ -14,5 +14,6 @@
 #
 
 include $(CMREMIX_VENDOR)/config/cmremix_common.mk
+include $(CMREMIX_VENDOR)/config/sm.mk
 
 
