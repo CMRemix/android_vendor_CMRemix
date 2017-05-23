@@ -43,11 +43,11 @@ ifeq ($(O3_OPTIMIZATIONS),true)
    OPT1 := (O3)
 endif
 
-ifeq ($(GRAPHITE_OPTIMIZATION),true)
+ifeq ($(GRAPHITE_OPTS),true)
    OPT2 := (graphite)
 endif
 
-ifeq (true,$(LOCAL_STRICT_ALIASING))
+ifeq ($(STRICT_ALIASING),true)
    OPT3 := (strict)
 endif
 

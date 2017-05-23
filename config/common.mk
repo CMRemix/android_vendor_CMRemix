@@ -92,17 +92,11 @@ ifneq ($(TARGET_DISABLE_CMSDK), true)
 include vendor/cmremix/config/cmsdk_common.mk
 endif
 
-# Bootanimation
-PRODUCT_PACKAGES += \
-    bootanimation.zip
-
 # Required CM packages
 PRODUCT_PACKAGES += \
     BluetoothExt \
     CMAudioService \
     CMParts \
-    Development \
-    Profiles \
     WeatherManagerService
 
 # Optional CM packages
@@ -121,9 +115,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     AudioFX \
     CMSettingsProvider \
-    CMUpdater \
     CustomTiles \
-    LineageSetupWizard \
     Eleven \
     ExactCalculator \
     Jelly \
