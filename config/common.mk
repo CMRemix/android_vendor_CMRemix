@@ -123,7 +123,8 @@ PRODUCT_PACKAGES += \
     LockClock \
     Trebuchet \
     WallpaperPicker \
-    WeatherProvider
+    WeatherProvider \
+    ThemeInterfacer
 
 # Exchange support
 PRODUCT_PACKAGES += \
