@@ -58,7 +58,8 @@ PRODUCT_PACKAGES += \
     CMRemixUpdater \
     MagiskManager \
     OmniSwitch \
-    OmniJaws
+    OmniJaws \
+    OmniStyle
 
 # Magisk
  PRODUCT_COPY_FILES += \
