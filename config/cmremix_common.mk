@@ -55,7 +55,7 @@ SQUISHER_SCRIPT := vendor/cmremix/tools/squisher
 
 # CMRemixOTA
 PRODUCT_PACKAGES += \
-    CMRemixUpdater \
+    CMRemixOTA \
     MagiskManager \
     OmniSwitch \
     OmniJaws \
