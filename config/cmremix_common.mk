@@ -50,6 +50,18 @@ endif
 # Bootanimation
 PRODUCT_COPY_FILES += vendor/cmremix/prebuilt/common/bootanimation/bootanimation.zip:system/media/bootanimation.zip
 
+# KA - Kernel Adiuter Kenel Controler
+PRODUCT_COPY_FILES += \
+vendor/cmremix/prebuilt/common/apk/KernelAdiutor/KernelAdiutor.apk:system/app/KernelAdiutor/KernelAdiutor.apk
+
+# Substratum - Themes Engine
+PRODUCT_COPY_FILES += \
+vendor/cmremix/prebuilt/common/apk/Substratum/Substratum.apk:system/app/Substratum/Substratum.apk
+
+# ADS Blocker Engine
+PRODUCT_COPY_FILES += \
+vendor/cmremix/prebuilt/common/apk/AdAway/AdAway.apk:system/app/AdAway/AdAway.apk
+
 # Squisher Location
 SQUISHER_SCRIPT := vendor/cmremix/tools/squisher
 
@@ -71,8 +83,3 @@ PRODUCT_PACKAGES += \
  
 PRODUCT_BOOT_JARS += \
     org.dirtyunicorns.utils
-
-
-# KCAL - Advanced color control for Qualcomm MDSS 8x26/8974/8084
-PRODUCT_COPY_FILES += \
-vendor/cmremix/prebuilt/common/apk/Savoca-Kcal/Savoca-Kcal.apk:system/app/Savoca-Kcal/Savoca-Kcal.apk
