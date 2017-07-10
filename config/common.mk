@@ -39,7 +39,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     vendor/cmremix/prebuilt/common/bin/backuptool.sh:install/bin/backuptool.sh \
     vendor/cmremix/prebuilt/common/bin/backuptool.functions:install/bin/backuptool.functions \
-    vendor/cmremix/prebuilt/common/bin/50-cm.sh:system/addon.d/50-cm.sh \
+    vendor/cmremix/prebuilt/common/bin/50-cmremix.sh:system/addon.d/50-cmremix.sh \
     vendor/cmremix/prebuilt/common/bin/blacklist:system/addon.d/blacklist
 
 # Backup Services whitelist
