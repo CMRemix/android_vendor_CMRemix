@@ -12,6 +12,20 @@ userdebug_or_eng(`
   allow sudaemon superuser_device:dir { create rw_dir_perms setattr unlink };
   allow sudaemon superuser_device:sock_file { create setattr unlink write };
 
+  allow sudaemon adbsecure_prop:file { getattr open };
+  allow sudaemon mmc_prop:file { getattr open };
+  allow sudaemon mpdecision_prop:file { getattr open };
+  allow sudaemon userinit_prop:file { getattr open };
+  allow sudaemon adbtcp_prop:file { getattr open };
+  allow sudaemon boot_mode_prop:file { getattr open };
+  allow sudaemon recovery_prop:file { getattr open };
+  allow sudaemon sys_usb_tethering_prop:file { getattr open };
+  allow sudaemon sys_usb_configfs_prop:file { getattr open };
+  allow sudaemon sys_usb_controller_prop:file { getattr open };
+  allow sudaemon timekeep_prop:file { getattr open };
+  allow sudaemon spcomlib_prop:file { getattr open };
+  allow sudaemon safemode_prop:file { getattr open };
+
   # sudaemon is also permissive to permit setenforce.
   permissive sudaemon;
 
